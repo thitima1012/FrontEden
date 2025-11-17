@@ -1,6 +1,6 @@
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label"
+import { Label } from "../../components/ui/label";
 import { useState, useRef } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import UserService from "../../service/userService";
@@ -8,7 +8,6 @@ import React from "react";
 
 export default function EmployeeForm() {
   const navigate = useNavigate();
-  // รับฟังก์ชัน handleAddEmployee จาก Parent Component
   const { handleAddEmployee } = useOutletContext();
 
   const [formData, setFormData] = useState({
@@ -34,7 +33,6 @@ export default function EmployeeForm() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // สร้าง Object URL สำหรับแสดงรูปภาพชั่วคราว
       const newImageUrl = URL.createObjectURL(file);
       setFormData({ ...formData, image: newImageUrl });
     }
@@ -50,14 +48,12 @@ export default function EmployeeForm() {
     setError(null);
     setSuccess(null);
 
-    // เช็ครหัสผ่านตรงกัน
     if (formData.password !== formData.confirmPassword) {
       setError("รหัสผ่านไม่ตรงกัน");
       setLoading(false);
       return;
     }
 
-    // เช็ค role ถูกต้อง
     const allowedRoles = ["admin", "caddy", "starter"];
     if (!allowedRoles.includes(formData.role.toLowerCase())) {
       setError("ตำแหน่งงานไม่ถูกต้อง กรุณาเลือก Admin, Caddy หรือ Starter");
@@ -75,57 +71,50 @@ export default function EmployeeForm() {
 
       const file = fileInputRef.current.files[0];
       if (file) {
-        data.append("img", file);
+        data.append("img", file); // ส่งไฟล์จริง
       }
 
-      // เรียก backend
       const response = await UserService.adminRegisterUser(data);
-
-      console.log("Response from server:", response.data);
-      const createdUser = response?.data; 
+      const createdUser = response?.data;
 
       if (createdUser && createdUser._id) {
         if (handleAddEmployee) {
-            handleAddEmployee(createdUser);
-            console.log("พนักงานใหม่ถูกเพิ่มใน State แล้ว:", createdUser.name);
+          handleAddEmployee(createdUser);
         }
 
         setSuccess("เพิ่มข้อมูลสำเร็จ ✅");
 
-        // redirect หลัง 1 วินาที
         setTimeout(() => navigate("/admin"), 1000);
       } else {
-        setError(response?.data?.message || "เกิดข้อผิดพลาด: Server ไม่ได้ส่งข้อมูลผู้ใช้กลับมาที่คาดหวัง");
+        setError(response?.data?.message || "Server ไม่ได้ส่งข้อมูลผู้ใช้กลับมา");
       }
     } catch (err) {
       console.error(err);
-      
-      // จัดการข้อผิดพลาดจาก Axios
       const serverMessage = err.response?.data?.message || err.response?.data?.error;
-      const displayError = serverMessage 
-        ? "ข้อผิดพลาดจากเซิร์ฟเวอร์: " + serverMessage 
-        : "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message;
-
-      setError(displayError);
+      setError(
+        serverMessage
+          ? "ข้อผิดพลาดจากเซิร์ฟเวอร์: " + serverMessage
+          : "เกิดข้อผิดพลาด: " + err.message
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    // ล้าง Object URL ก่อนออกจากหน้าเพื่อป้องกัน Memory Leak
-    if (formData.image && formData.image.startsWith('blob:')) {
-        URL.revokeObjectURL(formData.image);
+    if (formData.image && formData.image.startsWith("blob:")) {
+      URL.revokeObjectURL(formData.image);
     }
     navigate("/admin");
   };
 
   return (
     <div className="flex flex-col md:flex-row gap-4 justify-center items-start p-4 max-w-4xl mx-auto">
+      {/* รูปภาพ */}
       <div className="flex justify-center md:justify-start">
         <div className="bg-white p-2 rounded shadow-md w-48 h-fit text-center">
           <img
-            src={formData.img}
+            src={formData.image} // ใช้ key image ตรงกัน
             alt="Profile"
             className="rounded-full w-40 h-40 mx-auto object-cover"
           />
@@ -146,6 +135,7 @@ export default function EmployeeForm() {
         </div>
       </div>
 
+      {/* ฟอร์ม */}
       <form
         onSubmit={handleSubmit}
         className="flex-1 bg-white p-6 rounded shadow-md space-y-4 w-full max-w-md"
